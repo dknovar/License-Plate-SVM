@@ -23,7 +23,7 @@ function varargout = IdentifikasiPlatKendaraan02(varargin)
 
 % Edit the above text to modify the response to help IdentifikasiPlatKendaraan02
 
-% Last Modified by GUIDE v2.5 07-May-2018 10:33:50
+% Last Modified by GUIDE v2.5 08-May-2018 21:01:50
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -99,6 +99,7 @@ function preprocessing_btn_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 %grayscale
     global I;
+    global BWrmv;
     
     %grayscale
     G = rgb2gray(I);
@@ -159,39 +160,40 @@ function segmentasi_btn_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 %regionprops
-global BWd;
-BWr = regionprops(BWd, 'BoundingBox', 'PixelIdxList');
-hold on;
+global BWrmv;
 
-hw = vertcat(BWr(:).BoundingBox);
-BWrmv = BWd;
-for i=1:size(BWr,1)
-    rectangle('Position', BWr(i).BoundingBox,'edgecolor','red');
-    if (hw(i, 3)>40 && hw(i,4)>40) || (hw(i, 3)<10  && hw(i,4)<10) || hw(i, 4)<10 || hw(i,4)>40 || hw(i,3)<5 || hw(i,3)>30
-        BWrmv(BWr(i).PixelIdxList) = 0;
-    end
-end
+% BWr = regionprops(BWd, 'BoundingBox', 'PixelIdxList');
+% hold on;
+% 
+% hw = vertcat(BWr(:).BoundingBox);
+% BWrmv = BWd;
+% for i=1:size(BWr,1)
+%     rectangle('Position', BWr(i).BoundingBox,'edgecolor','red');
+%     if (hw(i, 3)>40 && hw(i,4)>40) || (hw(i, 3)<10  && hw(i,4)<10) || hw(i, 4)<10 || hw(i,4)>40 || hw(i,3)<5 || hw(i,3)>30
+%         BWrmv(BWr(i).PixelIdxList) = 0;
+%     end
+% end
 
-BWr2 = regionprops(BWrmv, 'BoundingBox', 'PixelIdxList');
-hw = vertcat(BWr2(:).BoundingBox);
-mean_w = sum(hw(:,3))/size(hw,1);
-mean_h = sum(hw(:,4))/size(hw,1);
+% BWr2 = regionprops(BWrmv, 'BoundingBox', 'PixelIdxList');
+% hw = vertcat(BWr2(:).BoundingBox);
+% mean_w = sum(hw(:,3))/size(hw,1);
+% mean_h = sum(hw(:,4))/size(hw,1);
+% 
+% for i=1:size(BWr2, 1)
+%     if (hw(i,3) < (.9*mean_w) && hw(i,4) < (mean_h)) || hw(i,4) < .9*mean_h
+%         BWrmv(BWr2(i).PixelIdxList) = 0;
+%     end
+% end
+% BWrmv = imclose(BWrmv, strel('diamond', 1));
 
-for i=1:size(BWr2, 1)
-    if (hw(i,3) < (.9*mean_w) && hw(i,4) < (mean_h)) || hw(i,4) < .9*mean_h
-        BWrmv(BWr2(i).PixelIdxList) = 0;
-    end
-end
-BWrmv = imclose(BWrmv, strel('diamond', 1));
-
-dir = 'D:\\Tugas Semester 6\\Machine Learning\\_SegmentedImage\';
+dir = '_SegmentedImage\';
 S = regionprops(BWrmv, 'BoundingBox', 'Image');
 for i=1:size(S,1)
     namafile = strcat('objek',int2str(i),'.jpg');
     imwrite(S(i).Image,strcat(dir,namafile),'jpg');
 end
 axes(handles.axes3);
-imshow(BWrmv);
+imshow(S(i).Image);
 
 
 % --- Executes on button press in klasifikasi_btn.
@@ -259,3 +261,33 @@ function edit1_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on button press in training_btn.
+function training_btn_Callback(hObject, eventdata, handles)
+% hObject    handle to training_btn (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+trainingDir = 'dataset';
+
+trainingSet = imageDatastore(trainingDir,   'IncludeSubfolders', true, 'LabelSource', 'foldernames');
+
+cellSize = [2 2];
+hogFeatureSize = 3780;
+
+numImages = numel(trainingSet.Files);
+trainingFeatures = zeros(numImages, hogFeatureSize, 'single');
+
+for i = 1:numImages
+    train_img = readimage(trainingSet, i);
+    train_img = imresize(train_img, [33 16]);
+%     train_img = rgb2gray(train_img);
+%     train_img = imadjust(train_img, [.55 1], []);
+%     train_img = imadjust(train_img);
+%     train_img = ~imbinarize(train_img);  
+    trainingFeatures(i, :) = extractHOGFeatures(train_img, 'CellSize', cellSize);  
+end
+
+trainingLabels = trainingSet.Labels;
+
+classifier = fitcecoc(trainingFeatures, trainingLabels);
