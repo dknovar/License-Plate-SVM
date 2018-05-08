@@ -23,7 +23,7 @@ function varargout = IdentifikasiPlatKendaraan02(varargin)
 
 % Edit the above text to modify the response to help IdentifikasiPlatKendaraan02
 
-% Last Modified by GUIDE v2.5 08-May-2018 21:01:50
+% Last Modified by GUIDE v2.5 08-May-2018 22:34:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -150,7 +150,15 @@ function preprocessing_btn_Callback(hObject, eventdata, handles)
     BWrmv = imclose(BWrmv, strel('diamond', 1));
     axes(handles.axes2);
     imshow(BWrmv);
-    figure, imshow(BWrmv);
+    
+    segmentation_folder = '_SegmentedImage\';
+    S = regionprops(BWrmv, 'BoundingBox', 'Image');
+    for i=1:size(S,1)
+%         fh = fopen('ResultFile.txt','w');
+        namafile = strcat('objek',int2str(i),'.jpg');
+        imwrite(S(i).Image,strcat(segmentation_folder,namafile),'jpg');   
+    end
+%     figure, imshow(BWrmv);
     %figure, imshow(BWrmv), title('Removed Unwanted Small Object');
 
 
@@ -160,41 +168,14 @@ function segmentasi_btn_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 %regionprops
-global BWrmv;
 
-% BWr = regionprops(BWd, 'BoundingBox', 'PixelIdxList');
-% hold on;
-% 
-% hw = vertcat(BWr(:).BoundingBox);
-% BWrmv = BWd;
-% for i=1:size(BWr,1)
-%     rectangle('Position', BWr(i).BoundingBox,'edgecolor','red');
-%     if (hw(i, 3)>40 && hw(i,4)>40) || (hw(i, 3)<10  && hw(i,4)<10) || hw(i, 4)<10 || hw(i,4)>40 || hw(i,3)<5 || hw(i,3)>30
-%         BWrmv(BWr(i).PixelIdxList) = 0;
-%     end
-% end
+segmentation_folder = imageDatastore('_SegmentedImage');
+% dirOutput = dir(fullfile(segmentation_folder,'*.jpg'));
+segNames = segmentation_folder.Files;
+mon = montage(segNames, 'Size', [1 8]);
 
-% BWr2 = regionprops(BWrmv, 'BoundingBox', 'PixelIdxList');
-% hw = vertcat(BWr2(:).BoundingBox);
-% mean_w = sum(hw(:,3))/size(hw,1);
-% mean_h = sum(hw(:,4))/size(hw,1);
-% 
-% for i=1:size(BWr2, 1)
-%     if (hw(i,3) < (.9*mean_w) && hw(i,4) < (mean_h)) || hw(i,4) < .9*mean_h
-%         BWrmv(BWr2(i).PixelIdxList) = 0;
-%     end
-% end
-% BWrmv = imclose(BWrmv, strel('diamond', 1));
-
-dir = '_SegmentedImage\';
-S = regionprops(BWrmv, 'BoundingBox', 'Image');
-for i=1:size(S,1)
-    namafile = strcat('objek',int2str(i),'.jpg');
-    imwrite(S(i).Image,strcat(dir,namafile),'jpg');
-end
-axes(handles.axes3);
-imshow(S(i).Image);
-
+axes(handles.pb3);
+imshow(mon);
 
 % --- Executes on button press in klasifikasi_btn.
 function klasifikasi_btn_Callback(hObject, eventdata, handles)
