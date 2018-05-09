@@ -156,7 +156,8 @@ function preprocessing_btn_Callback(hObject, eventdata, handles)
     for i=1:size(S,1)
 %         fh = fopen('ResultFile.txt','w');
         namafile = strcat('objek',int2str(i),'.jpg');
-        imwrite(S(i).Image,strcat(segmentation_folder,namafile),'jpg');   
+        imwrite(S(i).Image,strcat(segmentation_folder,namafile),'jpg');
+        count
     end
 %     figure, imshow(BWrmv);
     %figure, imshow(BWrmv), title('Removed Unwanted Small Object');
@@ -182,6 +183,8 @@ function klasifikasi_btn_Callback(hObject, eventdata, handles)
 % hObject    handle to klasifikasi_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+global classifier;
+global cellSize;
 testDir = '_SegmentedImage';
 
 testSet = imageDatastore(testDir);
@@ -198,10 +201,12 @@ for i = 1:numImages_test
 %     test_img = bwmorph(test_img, 'thin', Inf);
   
     TestFeatures = extractHOGFeatures(test_img,'CellSize',cellSize); 
-    predictedLabels = predict(classifier, TestFeatures);
-    fprintf('%s', predictedLabels)
+    predictedLabels(i) = predict(classifier, TestFeatures);
+    val(i) = sprintf('%s', predictedLabels(i));
+    
+    
 end
-
+set(handles.cl_txt, 'String', val);
 
 % --- Executes on button press in recognition_btn.
 function recognition_btn_Callback(hObject, eventdata, handles)
@@ -268,7 +273,10 @@ function training_btn_Callback(hObject, eventdata, handles)
 % hObject    handle to training_btn (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+global classifier;
+global cellSize;
 trainingDir = 'dataset';
+
 
 trainingSet = imageDatastore(trainingDir,   'IncludeSubfolders', true, 'LabelSource', 'foldernames');
 

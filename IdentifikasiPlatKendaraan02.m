@@ -156,8 +156,11 @@ function preprocessing_btn_Callback(hObject, eventdata, handles)
     for i=1:size(S,1)
 %         fh = fopen('ResultFile.txt','w');
         namafile = strcat('objek',int2str(i),'.jpg');
-        imwrite(S(i).Image,strcat(segmentation_folder,namafile),'jpg');   
+        imwrite(~S(i).Image,strcat(segmentation_folder,namafile),'jpg');
+        
     end
+    global countobj;
+    countobj = size(S,1);
 %     figure, imshow(BWrmv);
     %figure, imshow(BWrmv), title('Removed Unwanted Small Object');
 
@@ -184,13 +187,14 @@ function klasifikasi_btn_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 global classifier;
 global cellSize;
+global countobj;
 testDir = '_SegmentedImage';
 
 testSet = imageDatastore(testDir);
 numImages_test = numel(testSet.Files);
 % trainingFeatures = zeros(numImages, hogFeatureSize, 'single');
 
-for i = 1:numImages_test
+for i = 1:countobj
     test_img = readimage(testSet, i);
     test_img = imresize(test_img, [33 16]);
 %     test_img = imadjust(test_img, [.55 1], []);
